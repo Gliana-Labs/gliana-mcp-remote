@@ -1,0 +1,17 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "gliana-mcp-remote",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-06-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true },
+  "durable_objects": {
+    "bindings": [{ "name": "GLIANA_MCP", "class_name": "GlianaMCP" }]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["GlianaMCP"] }
+  ],
+  "vars": {
+    "GLIANA_API_URL": "https://api.glianalabs.com"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "name": "gliana-mcp-remote",
+  "version": "0.1.0",
+  "description": "Hosted MCP server for GlianaAI — discovery tools (list_models, get_price, get_schema) over Streamable HTTP on Cloudflare Workers.",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "agents": "^0.0.80",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250620.0",
+    "typescript": "^5.6.0",
+    "wrangler": "^4.20.0"
+  }
+}
