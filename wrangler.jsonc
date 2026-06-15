@@ -5,6 +5,9 @@
   "compatibility_date": "2025-06-01",
   "compatibility_flags": ["nodejs_compat"],
   "observability": { "enabled": true },
+  // Branded endpoint. glianalabs.com is on Cloudflare, so deploy auto-provisions
+  // the DNS record + TLS cert. MCP endpoint becomes https://mcp.glianalabs.com/mcp
+  "routes": [{ "pattern": "mcp.glianalabs.com", "custom_domain": true }],
   "durable_objects": {
     "bindings": [{ "name": "GLIANA_MCP", "class_name": "GlianaMCP" }]
   },
