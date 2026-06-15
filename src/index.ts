@@ -23,10 +23,25 @@ type CatalogModel = { id: string; provider: string; category: string; unit: stri
 type Price = { model: string; costMicroUsd: number; unit: string; units: number };
 
 export class GlianaMCP extends McpAgent<Env> {
-  server = new McpServer({
-    name: 'gliana-ai',
-    version: '0.1.0',
-  });
+  server = new McpServer(
+    {
+      name: 'gliana-ai',
+      version: '0.1.0',
+      title: 'GlianaAI',
+      websiteUrl: 'https://ai.glianalabs.com',
+      icons: [
+        { src: 'https://ai.glianalabs.com/logo.svg', mimeType: 'image/svg+xml', sizes: ['any'] },
+        { src: 'https://ai.glianalabs.com/og.png', mimeType: 'image/png', sizes: ['1200x630'] },
+      ],
+    },
+    {
+      instructions:
+        'GlianaAI — pay-per-call generative AI across 59 models (image, video, music, speech). ' +
+        'No signup or API key; each call is paid from your own wallet over MPP/x402. Use list_models to ' +
+        'browse the catalog, get_price to quote a call, get_schema for a model’s inputs. Paid generation runs ' +
+        'in the local npx server (see how_to_generate) so your wallet key never leaves your machine.',
+    },
+  );
 
   private api() {
     return (this.env.GLIANA_API_URL || 'https://api.glianalabs.com').replace(/\/+$/, '');
