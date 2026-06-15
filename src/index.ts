@@ -30,8 +30,8 @@ export class GlianaMCP extends McpAgent<Env> {
       title: 'GlianaAI',
       websiteUrl: 'https://ai.glianalabs.com',
       icons: [
+        { src: 'https://ai.glianalabs.com/icon-512.png', mimeType: 'image/png', sizes: ['512x512'] },
         { src: 'https://ai.glianalabs.com/logo.svg', mimeType: 'image/svg+xml', sizes: ['any'] },
-        { src: 'https://ai.glianalabs.com/og.png', mimeType: 'image/png', sizes: ['1200x630'] },
       ],
     },
     {
