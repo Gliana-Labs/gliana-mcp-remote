@@ -39,7 +39,18 @@ export class GlianaMCP extends McpAgent<Env> {
   }
 
   async init() {
-    const text = (s: string) => ({ content: [{ type: 'text' as const, text: s }] });
+    const out = (s: string, structured: Record<string, unknown>) => ({
+      content: [{ type: 'text' as const, text: s }],
+      structuredContent: structured,
+    });
+
+    const modelShape = {
+      id: z.string(),
+      provider: z.string(),
+      category: z.string(),
+      unit: z.string(),
+      priceLabel: z.string(),
+    };
 
     this.server.registerTool(
       'list_models',
@@ -47,15 +58,20 @@ export class GlianaMCP extends McpAgent<Env> {
         description:
           'List every GlianaAI model (id, category, provider, per-call price). Free. Pick a model before get_price / generation.',
         inputSchema: {},
+        outputSchema: {
+          count: z.number().describe('Number of models.'),
+          models: z.array(z.object(modelShape)).describe('Every available model.'),
+        },
+        annotations: { title: 'List models', readOnlyHint: true, openWorldHint: true },
       },
       async () => {
         const { models } = await this.getJson<{ models: CatalogModel[] }>('/v1/models');
         const byCat: Record<string, CatalogModel[]> = {};
         for (const m of models) (byCat[m.category] ??= []).push(m);
-        const out = Object.entries(byCat)
+        const pretty = Object.entries(byCat)
           .map(([cat, ms]) => `## ${cat}\n` + ms.map((m) => `- ${m.id} (${m.provider}) — ${m.priceLabel}`).join('\n'))
           .join('\n\n');
-        return text(`${models.length} models on GlianaAI:\n\n${out}`);
+        return out(`${models.length} models on GlianaAI:\n\n${pretty}`, { count: models.length, models });
       },
     );
 
@@ -68,12 +84,26 @@ export class GlianaMCP extends McpAgent<Env> {
           model: z.string().describe('Model id from list_models.'),
           input: z.record(z.any()).optional().describe('Optional input affecting price, e.g. { duration: 8 }.'),
         },
+        outputSchema: {
+          model: z.string(),
+          costMicroUsd: z.number().describe('Cost in micro-USD (1e-6 USD).'),
+          costUsd: z.string().describe('Cost formatted in USD.'),
+          unit: z.string().describe('Billing unit (e.g. second, character, image).'),
+          units: z.number().describe('Number of billed units.'),
+        },
+        annotations: { title: 'Get price', readOnlyHint: true, openWorldHint: true },
       },
       async ({ model, input }) => {
         const qs = new URLSearchParams({ model });
         if (input) for (const [k, v] of Object.entries(input)) qs.set(k, String(v));
         const p = await this.getJson<Price>(`/v1/price?${qs.toString()}`);
-        return text(`${p.model}: ${usd(p.costMicroUsd)} (${p.units} ${p.unit}${p.units === 1 ? '' : 's'}).`);
+        return out(`${p.model}: ${usd(p.costMicroUsd)} (${p.units} ${p.unit}${p.units === 1 ? '' : 's'}).`, {
+          model: p.model,
+          costMicroUsd: p.costMicroUsd,
+          costUsd: usd(p.costMicroUsd),
+          unit: p.unit,
+          units: p.units,
+        });
       },
     );
 
@@ -82,13 +112,21 @@ export class GlianaMCP extends McpAgent<Env> {
       {
         description: 'Get a model’s input fields (names, types, required, defaults). Free.',
         inputSchema: { model: z.string().describe('Model id from list_models.') },
+        outputSchema: {
+          model: z.string(),
+          category: z.string(),
+          required: z.array(z.string()).describe('Required field names.'),
+          props: z.record(z.any()).describe('Field definitions keyed by name.'),
+        },
+        annotations: { title: 'Get input schema', readOnlyHint: true, openWorldHint: true },
       },
       async ({ model }) => {
         const s = await this.getJson<{ model: string; category: string; required: string[]; props: Record<string, unknown> }>(
           `/v1/schema?model=${encodeURIComponent(model)}`,
         );
-        return text(
+        return out(
           `${s.model} (${s.category})\nrequired: ${s.required.join(', ') || '—'}\n\nfields:\n${JSON.stringify(s.props, null, 2)}`,
+          { model: s.model, category: s.category, required: s.required, props: s.props },
         );
       },
     );
@@ -99,16 +137,35 @@ export class GlianaMCP extends McpAgent<Env> {
         description:
           'How to actually RUN a model (paid). Generation is done locally so your wallet key stays on your machine — this returns the install + config for the gliana-ai-mcp local server.',
         inputSchema: {},
+        outputSchema: {
+          package: z.string(),
+          command: z.string(),
+          rails: z.array(z.string()),
+          config: z.record(z.any()).describe('MCP client config snippet.'),
+          docs: z.string(),
+        },
+        annotations: { title: 'How to generate (paid)', readOnlyHint: true, openWorldHint: false },
       },
-      async () =>
-        text(
+      async () => {
+        const config = {
+          mcpServers: {
+            'gliana-ai': { command: 'npx', args: ['-y', 'gliana-ai-mcp'], env: { GLIANA_WALLET_KEY: '0xYOUR_KEY' } },
+          },
+        };
+        const txt =
           'Paid generation runs in the LOCAL GlianaAI MCP server (your wallet key never leaves your machine).\n\n' +
-            'Add to your MCP client config:\n\n' +
-            '{\n  "mcpServers": {\n    "gliana-ai": {\n      "command": "npx",\n      "args": ["-y", "gliana-ai-mcp"],\n' +
-            '      "env": { "GLIANA_WALLET_KEY": "0xYOUR_KEY" }\n    }\n  }\n}\n\n' +
-            'Rails: base (default) / tempo via GLIANA_WALLET_KEY (USDC), solana via GLIANA_SOLANA_KEY. ' +
-            'Fund a low-balance wallet; you pay only the per-call price. Docs: https://ai.glianalabs.com/docs',
-        ),
+          'Add to your MCP client config:\n\n' +
+          JSON.stringify(config, null, 2) +
+          '\n\nRails: base (default) / tempo via GLIANA_WALLET_KEY (USDC), solana via GLIANA_SOLANA_KEY. ' +
+          'Fund a low-balance wallet; you pay only the per-call price. Docs: https://ai.glianalabs.com/docs';
+        return out(txt, {
+          package: 'gliana-ai-mcp',
+          command: 'npx -y gliana-ai-mcp',
+          rails: ['base', 'tempo', 'solana'],
+          config,
+          docs: 'https://ai.glianalabs.com/docs',
+        });
+      },
     );
   }
 }
