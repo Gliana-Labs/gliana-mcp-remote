@@ -172,7 +172,10 @@ export class GlianaMCP extends McpAgent<Env> {
           'Add to your MCP client config:\n\n' +
           JSON.stringify(config, null, 2) +
           '\n\nRails: base (default) / tempo via GLIANA_WALLET_KEY (USDC), solana via GLIANA_SOLANA_KEY. ' +
-          'Fund a low-balance wallet; you pay only the per-call price. Docs: https://ai.glianalabs.com/docs';
+          'Fund a low-balance wallet; you pay only the per-call price.\n\n' +
+          'File inputs (image/video/audio — e.g. image-to-video, or video-to-video `video_uri`) take a public ' +
+          'URL. Upload a local file with POST https://api.glianalabs.com/v1/media (raw body + Content-Type, ≤40MB) ' +
+          'to get one. Docs: https://ai.glianalabs.com/docs';
         return out(txt, {
           package: 'gliana-ai-mcp',
           command: 'npx -y gliana-ai-mcp',
