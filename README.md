@@ -6,7 +6,7 @@ Smithery's hosted directory) can browse the catalog with zero setup.
 
 | Tool | Description |
 |------|-------------|
-| `list_models` | All 59 models: id, category, provider, per-call price. |
+| `list_models` | All 60+ models: id, category, provider, per-call price. |
 | `get_price` | Exact cost of one call (input affects it). |
 | `get_schema` | A model's input fields. |
 | `how_to_generate` | Install/config for the local server that does paid generation. |
