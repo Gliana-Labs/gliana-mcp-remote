@@ -36,7 +36,7 @@ export class GlianaMCP extends McpAgent<Env> {
     },
     {
       instructions:
-        'GlianaAI — pay-per-call generative AI across 60+ models (image, video, music, speech). ' +
+        'GlianaAI — pay-per-call generative AI across 70+ models (image, video, music, speech). ' +
         'No signup or API key; each call is paid from your own wallet over MPP/x402. Use list_models to ' +
         'browse the catalog, get_price to quote a call, get_schema for a model’s inputs. Paid generation runs ' +
         'in the local npx server (see how_to_generate) so your wallet key never leaves your machine.',
