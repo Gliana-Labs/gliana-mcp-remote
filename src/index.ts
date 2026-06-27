@@ -175,7 +175,8 @@ export class GlianaMCP extends McpAgent<Env> {
           'Fund a low-balance wallet; you pay only the per-call price.\n\n' +
           'File inputs (image/video/audio — e.g. image-to-video, or video-to-video `video_uri`) take a public ' +
           'URL. Upload a local file with POST https://api.glianalabs.com/v1/media (raw body + Content-Type, ≤40MB) ' +
-          'to get one. Docs: https://ai.glianalabs.com/docs';
+          'to get one. Array file fields (e.g. `images`, `reference_images` for multi-reference models) take an ' +
+          'ARRAY of such URLs. Docs: https://ai.glianalabs.com/docs';
         return out(txt, {
           package: 'gliana-ai-mcp',
           command: 'npx -y gliana-ai-mcp',
