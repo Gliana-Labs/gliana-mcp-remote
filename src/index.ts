@@ -150,7 +150,7 @@ export class GlianaMCP extends McpAgent<Env> {
       'how_to_generate',
       {
         description:
-          'How to actually RUN a model (paid). Generation is done locally so your wallet key stays on your machine — this returns the install + config for the gliana-ai-mcp local server.',
+          'How to actually RUN a model, UTILITY TOOL, or RECIPE (all paid). Done locally so your wallet key stays on your machine — this returns the install + config for the gliana-ai-mcp local server (tools: generate, tool, recipe).',
         inputSchema: {},
         outputSchema: {
           package: z.string(),
@@ -173,6 +173,9 @@ export class GlianaMCP extends McpAgent<Env> {
           JSON.stringify(config, null, 2) +
           '\n\nRails: base (default) / tempo via GLIANA_WALLET_KEY (USDC), solana via GLIANA_SOLANA_KEY. ' +
           'Fund a low-balance wallet; you pay only the per-call price.\n\n' +
+          'The local server also has `tool` (utility endpoints: scrape, screenshot, og-image, ' +
+          'youtube-thumbnail, quote-card, code-image, tweet-image, meme, card, auto-og, rpc, token-price) and ' +
+          '`recipe` (multi-model pipelines: image-to-video[-hd|-audio]) — same wallet, pay-per-call.\n\n' +
           'File inputs (image/video/audio — e.g. image-to-video, or video-to-video `video_uri`) take a public ' +
           'URL. Upload a local file with POST https://api.glianalabs.com/v1/media (raw body + Content-Type, ≤40MB) ' +
           'to get one. Array file fields (e.g. `images`, `reference_images` for multi-reference models) take an ' +
