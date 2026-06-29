@@ -174,7 +174,8 @@ export class GlianaMCP extends McpAgent<Env> {
           '\n\nRails: base (default) / tempo via GLIANA_WALLET_KEY (USDC), solana via GLIANA_SOLANA_KEY. ' +
           'Fund a low-balance wallet; you pay only the per-call price.\n\n' +
           'The local server also has `tool` (utility endpoints: scrape, screenshot, og-image, ' +
-          'youtube-thumbnail, quote-card, code-image, tweet-image, meme, card, auto-og, rpc, token-price) and ' +
+          'youtube-thumbnail, quote-card, code-image, tweet-image, meme, card, auto-og, rpc, token-price, ' +
+          'face-detect, face-embed (512-d ArcFace), face-compare) and ' +
           '`recipe` (multi-model pipelines: image-to-video[-hd|-audio]) — same wallet, pay-per-call.\n\n' +
           'File inputs (image/video/audio — e.g. image-to-video, or video-to-video `video_uri`) take a public ' +
           'URL. Upload a local file with POST https://api.glianalabs.com/v1/media (raw body + Content-Type, ≤40MB) ' +
