@@ -97,7 +97,7 @@ export class GlianaMCP extends McpAgent<Env> {
           'Quote the exact cost of one call for a model (optionally with input that affects price, e.g. video duration). Free.',
         inputSchema: {
           model: z.string().describe('Model id from list_models.'),
-          input: z.record(z.any()).optional().describe('Optional input affecting price, e.g. { duration: 8 }.'),
+          input: z.record(z.string(), z.any()).optional().describe('Optional input affecting price, e.g. { duration: 8 }.'),
         },
         outputSchema: {
           model: z.string(),
@@ -131,7 +131,7 @@ export class GlianaMCP extends McpAgent<Env> {
           model: z.string(),
           category: z.string(),
           required: z.array(z.string()).describe('Required field names.'),
-          props: z.record(z.any()).describe('Field definitions keyed by name.'),
+          props: z.record(z.string(), z.any()).describe('Field definitions keyed by name.'),
         },
         annotations: { title: 'Get input schema', readOnlyHint: true, openWorldHint: true },
       },
@@ -156,7 +156,7 @@ export class GlianaMCP extends McpAgent<Env> {
           package: z.string(),
           command: z.string(),
           rails: z.array(z.string()),
-          config: z.record(z.any()).describe('MCP client config snippet.'),
+          config: z.record(z.string(), z.any()).describe('MCP client config snippet.'),
           docs: z.string(),
         },
         annotations: { title: 'How to generate (paid)', readOnlyHint: true, openWorldHint: false },
