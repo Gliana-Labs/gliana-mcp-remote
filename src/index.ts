@@ -22,11 +22,24 @@ const usd = (micro: number) => `$${(micro / 1_000_000).toFixed(6).replace(/0+$/,
 type CatalogModel = { id: string; provider: string; category: string; unit: string; priceLabel: string };
 type Price = { model: string; costMicroUsd: number; unit: string; units: number };
 
+/**
+ * A utility tool as the gateway describes itself at GET /v1/tools. Read live, so a
+ * new endpoint shows up here the moment it deploys — this file used to carry a
+ * hardcoded prose list and it had drifted by six endpoints.
+ */
+type UtilityTool = {
+  name: string;
+  method?: 'GET' | 'POST';
+  priceMicroUsd: number;
+  example?: Record<string, unknown>;
+  guidance?: string;
+};
+
 export class GlianaMCP extends McpAgent<Env> {
   server = new McpServer(
     {
       name: 'gliana-ai',
-      version: '0.1.0',
+      version: '0.2.0',
       title: 'GlianaAI',
       websiteUrl: 'https://ai.glianalabs.com',
       icons: [
@@ -36,10 +49,12 @@ export class GlianaMCP extends McpAgent<Env> {
     },
     {
       instructions:
-        'GlianaAI — pay-per-call generative AI across 70+ models (LLM chat/text, image, video, music, speech). ' +
-        'No signup or API key; each call is paid from your own wallet over MPP/x402. Use list_models to ' +
-        'browse the catalog, get_price to quote a call, get_schema for a model’s inputs. Paid generation runs ' +
-        'in the local npx server (see how_to_generate) so your wallet key never leaves your machine.',
+        'GlianaAI — pay-per-call generative AI across 90+ models (LLM chat/text, image, video, music, speech) plus ' +
+        'utility and data tools. No signup or API key; paid calls settle from your own wallet over MPP/x402. ' +
+        'list_models to browse the catalog, get_price to quote, get_schema for a model’s inputs, list_tools for the ' +
+        'utility tools. Some of those are FREE and run right here via run_free_tool (Indonesian wilayah, prayer times, ' +
+        'NIK verification). Paid generation runs in the local npx server (see how_to_generate) so your wallet key never ' +
+        'leaves your machine.',
     },
   );
 
@@ -51,6 +66,11 @@ export class GlianaMCP extends McpAgent<Env> {
     const r = await fetch(`${this.api()}${path}`, { headers: { accept: 'application/json' } });
     if (!r.ok) throw new Error(`GET ${path} → HTTP ${r.status}`);
     return (await r.json()) as T;
+  }
+
+  private async utilityTools(): Promise<UtilityTool[]> {
+    const { tools } = await this.getJson<{ tools: UtilityTool[] }>('/v1/tools');
+    return tools;
   }
 
   async init() {
@@ -147,6 +167,110 @@ export class GlianaMCP extends McpAgent<Env> {
     );
 
     this.server.registerTool(
+      'list_tools',
+      {
+        description:
+          'List every GlianaAI utility tool (name, HTTP method, per-call price, example input, usage guidance), read live ' +
+          'from the gateway so it is never out of date. Free. Tools reported at priceMicroUsd 0 are free to call and can be ' +
+          'run right here with run_free_tool; the paid ones need a wallet and run in the local server (see how_to_generate).',
+        inputSchema: {},
+        outputSchema: {
+          tools: z.array(
+            z.object({
+              name: z.string(),
+              method: z.string(),
+              priceMicroUsd: z.number().describe('0 means free — runnable here via run_free_tool.'),
+              priceUsd: z.string(),
+              free: z.boolean(),
+              example: z.record(z.string(), z.any()),
+              guidance: z.string(),
+            }),
+          ),
+        },
+        annotations: { title: 'List utility tools', readOnlyHint: true, openWorldHint: false },
+      },
+      async () => {
+        const all = await this.utilityTools();
+        const tools = all.map((t) => ({
+          name: t.name,
+          method: t.method ?? 'POST',
+          priceMicroUsd: t.priceMicroUsd,
+          priceUsd: usd(t.priceMicroUsd),
+          free: t.priceMicroUsd === 0,
+          example: t.example ?? {},
+          guidance: t.guidance ?? '',
+        }));
+        const lines = tools.map(
+          (t) => `- ${t.name} (${t.method}, ${t.free ? 'FREE — run here' : t.priceUsd + ' — local server'}) ${t.guidance}`.trim(),
+        );
+        return out(`${tools.length} utility tools:\n${lines.join('\n')}`, { tools });
+      },
+    );
+
+    /**
+     * The free reference endpoints, callable from this hosted server.
+     *
+     * Safe to host precisely because they take no payment: there is no wallet key
+     * here and never should be (that's why `generate` lives in the local server).
+     * The allowed set is read from the gateway and checked on every call — a tool
+     * must report priceMicroUsd 0 AND method GET — so this can never become a way
+     * to trigger a paid call, or an open proxy for arbitrary POSTs.
+     */
+    this.server.registerTool(
+      'run_free_tool',
+      {
+        description:
+          'Run one of the FREE GlianaAI data tools right here — no wallet, no signup, no payment. Currently the Indonesian ' +
+          'reference endpoints: `wilayah` (38 provinsi + 514 kabupaten/kota with official Kepmendagri codes, coordinates, ' +
+          'timezone, area, population), `prayer-times` (jadwal sholat for any Indonesian city or coordinate, up to 31 days ' +
+          'in one call), `verify-nik` (structurally verify an Indonesian NIK against official region data). Call list_tools ' +
+          'for the live set and each one\'s input shape. Paid tools are refused here — use the local server for those.',
+        inputSchema: {
+          name: z.string().describe('A tool name that list_tools reports as free, e.g. wilayah, prayer-times, verify-nik.'),
+          args: z.record(z.string(), z.any()).optional().describe('Query parameters, as shown in the tool\'s `example`.'),
+        },
+        outputSchema: { tool: z.string(), result: z.any() },
+        annotations: { title: 'Run a free data tool', readOnlyHint: true, openWorldHint: true },
+      },
+      async ({ name, args }) => {
+        const all = await this.utilityTools();
+        const found = all.find((t) => t.name === name);
+        if (!found) {
+          return {
+            content: [{ type: 'text' as const, text: `Unknown tool "${name}". Call list_tools for the current set.` }],
+            isError: true,
+          };
+        }
+        if (found.priceMicroUsd !== 0 || (found.method ?? 'POST') !== 'GET') {
+          return {
+            content: [
+              {
+                type: 'text' as const,
+                text:
+                  `"${name}" costs ${usd(found.priceMicroUsd)} per call and cannot run on this hosted server — it has no ` +
+                  'wallet by design. Use the local gliana-ai-mcp server (see how_to_generate), where your key stays on your machine.',
+              },
+            ],
+            isError: true,
+          };
+        }
+        const qs = new URLSearchParams();
+        for (const [k, v] of Object.entries(args ?? {})) {
+          if (v !== undefined && v !== null) qs.set(k, String(v));
+        }
+        const r = await fetch(`${this.api()}/v1/tools/${name}?${qs}`, { headers: { accept: 'application/json' } });
+        const j = (await r.json().catch(() => ({}))) as Record<string, unknown>;
+        if (!r.ok) {
+          return {
+            content: [{ type: 'text' as const, text: String(j.detail ?? j.error ?? `Request failed (HTTP ${r.status})`) }],
+            isError: true,
+          };
+        }
+        return out(`${name} (free):\n${JSON.stringify(j, null, 2)}`, { tool: name, result: j });
+      },
+    );
+
+    this.server.registerTool(
       'how_to_generate',
       {
         description:
@@ -173,10 +297,9 @@ export class GlianaMCP extends McpAgent<Env> {
           JSON.stringify(config, null, 2) +
           '\n\nRails: base (default) / tempo via GLIANA_WALLET_KEY (USDC), solana via GLIANA_SOLANA_KEY. ' +
           'Fund a low-balance wallet; you pay only the per-call price.\n\n' +
-          'The local server also has `tool` (utility endpoints: scrape, screenshot, og-image, ' +
-          'youtube-thumbnail, quote-card, code-image, tweet-image, meme, card, auto-og, rpc, token-price, ' +
-          'face-detect, face-embed (512-d ArcFace), face-compare, youtube-summary — AI summary of a YouTube video ≤60 min) and ' +
-          '`recipe` (multi-model pipelines: image-to-video[-hd|-audio]) — same wallet, pay-per-call.\n\n' +
+          'The local server also has `tool` (every paid utility endpoint — call list_tools here for the live list with ' +
+          'prices and input shapes, rather than trusting a list written into this text) and `recipe` (multi-model ' +
+          'pipelines: image-to-video[-hd|-audio]) — same wallet, pay-per-call.\n\n' +
           'File inputs (image/video/audio — e.g. image-to-video, or video-to-video `video_uri`) take a public ' +
           'URL. Upload a local file with POST https://api.glianalabs.com/v1/media (raw body + Content-Type, ≤40MB) ' +
           'to get one. Array file fields (e.g. `images`, `reference_images` for multi-reference models) take an ' +
