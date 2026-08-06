@@ -1,7 +1,7 @@
 {
   "name": "gliana-mcp-remote",
   "version": "0.2.0",
-  "description": "Hosted MCP server for GlianaAI \u2014 discovery tools (list_models, get_price, get_schema) over Streamable HTTP on Cloudflare Workers.",
+  "description": "Hosted MCP server for GlianaAI \u2014 discovery and free-tool execution (list_models, list_tools, get_price, get_schema, run_free_tool) over Streamable HTTP on Cloudflare Workers.",
   "private": true,
   "type": "module",
   "scripts": {
