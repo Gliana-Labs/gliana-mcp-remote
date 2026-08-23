@@ -2,7 +2,7 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.Gliana-Labs/gliana-mcp-remote",
   "title": "GlianaAI (hosted)",
-  "description": "Hosted GlianaAI MCP server. Browse 90+ generative models with live prices and schemas, and run the free Indonesian data tools — no install, no signup, no API key. Paid generation runs in the local server, gliana-ai-mcp.",
+  "description": "Hosted GlianaAI MCP server. Browse 90+ generative models with live prices and schemas, and run the free Indonesian data tools — no install, no signup, no API key. Paid generation, market data and SEC filings run in the local server, gliana-ai-mcp.",
   "repository": {
     "url": "https://github.com/Gliana-Labs/gliana-mcp-remote",
     "source": "github"
