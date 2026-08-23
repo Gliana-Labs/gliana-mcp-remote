@@ -1,5 +1,7 @@
 # gliana-mcp-remote
 
+[![smithery badge](https://smithery.ai/badge/glianalabs/gliana-ai)](https://smithery.ai/servers/glianalabs/gliana-ai)
+
 Hosted **MCP server** for [GlianaAI](https://ai.glianalabs.com) — Streamable HTTP
 on Cloudflare Workers. Exposes the free **discovery** tools, and runs the free
 Indonesian data tools, so any MCP client can browse the catalog and get real
