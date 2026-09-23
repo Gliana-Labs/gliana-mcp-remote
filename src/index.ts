@@ -49,7 +49,7 @@ export class GlianaMCP extends McpAgent<Env> {
     },
     {
       instructions:
-        'GlianaAI — pay-per-call generative AI across 90+ models (LLM chat/text, image, video, music, speech) plus ' +
+        'GlianaAI — pay-per-call generative AI across 100+ models (LLM chat/text, image, video, music, speech) plus ' +
         'utility and data tools. No signup or API key; paid calls settle from your own wallet over MPP/x402. ' +
         'list_models to browse the catalog, get_price to quote, get_schema for a model’s inputs, list_tools for the ' +
         'utility tools. Some of those are FREE and run right here via run_free_tool (Indonesian wilayah, prayer times, ' +
