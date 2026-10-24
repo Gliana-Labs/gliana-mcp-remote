@@ -8,11 +8,12 @@
   // Branded endpoint. glianalabs.com is on Cloudflare, so deploy auto-provisions
   // the DNS record + TLS cert. MCP endpoint becomes https://mcp.glianalabs.com/mcp
   "routes": [{ "pattern": "mcp.glianalabs.com", "custom_domain": true }],
-  "durable_objects": {
-    "bindings": [{ "name": "GLIANA_MCP", "class_name": "GlianaMCP" }]
-  },
+  // v2 deletes GlianaMCP and ALL its storage: one Durable Object per MCP
+  // session, never cleaned up (6.67k objects / 680 MB on 2026-10-25). The
+  // server is stateless now (src/index.ts), so nothing in them is needed.
   "migrations": [
-    { "tag": "v1", "new_sqlite_classes": ["GlianaMCP"] }
+    { "tag": "v1", "new_sqlite_classes": ["GlianaMCP"] },
+    { "tag": "v2", "deleted_classes": ["GlianaMCP"] }
   ],
   "vars": {
     "GLIANA_API_URL": "https://api.glianalabs.com"

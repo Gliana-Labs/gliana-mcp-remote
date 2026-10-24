@@ -9,11 +9,10 @@
  * the how_to_generate tool points users there.
  */
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
-import { McpAgent } from 'agents/mcp';
+import { createMcpHandler } from 'agents/mcp';
 import { z } from 'zod';
 
 interface Env {
-  GLIANA_MCP: DurableObjectNamespace;
   GLIANA_API_URL: string;
 }
 
@@ -35,7 +34,16 @@ type UtilityTool = {
   guidance?: string;
 };
 
-export class GlianaMCP extends McpAgent<Env> {
+/**
+ * One server per request, stateless. It used to be an McpAgent, which made a
+ * Durable Object for every MCP session and never deleted it: 6.67k objects and
+ * 680 MB of session rows by 2026-10-25, for a server that keeps no state —
+ * every tool is a live GET against the gateway. (wrangler.jsonc migration v2
+ * deletes the old class and its storage.)
+ */
+class GlianaTools {
+  constructor(private readonly env: Env) {}
+
   server = new McpServer(
     {
       name: 'gliana-ai',
@@ -317,13 +325,21 @@ export class GlianaMCP extends McpAgent<Env> {
 }
 
 export default {
-  fetch(request: Request, env: Env, ctx: ExecutionContext): Response | Promise<Response> {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
     if (url.pathname === '/mcp' || url.pathname.startsWith('/mcp/')) {
-      return GlianaMCP.serve('/mcp', { binding: 'GLIANA_MCP' }).fetch(request, env, ctx);
+      // McpServer binds to one transport, so each request gets its own.
+      const tools = new GlianaTools(env);
+      await tools.init();
+      return createMcpHandler(tools.server, { route: '/mcp' })(request, env, ctx);
     }
     if (url.pathname === '/sse' || url.pathname.startsWith('/sse/')) {
-      return GlianaMCP.serveSSE('/sse', { binding: 'GLIANA_MCP' }).fetch(request, env, ctx);
+      // The old SSE transport needs a session held between requests, which is
+      // what the per-session Durable Objects were for. Streamable HTTP replaced it.
+      return new Response('The SSE transport is retired. Connect to https://mcp.glianalabs.com/mcp (Streamable HTTP).', {
+        status: 410,
+        headers: { 'content-type': 'text/plain' },
+      });
     }
     return new Response(
       'GlianaAI MCP server. Connect an MCP client to /mcp (Streamable HTTP). Tools: list_models, get_price, get_schema, how_to_generate. Paid generation: npx gliana-ai-mcp. https://ai.glianalabs.com',
