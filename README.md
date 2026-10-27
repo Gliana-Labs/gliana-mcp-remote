@@ -1,6 +1,7 @@
 # gliana-mcp-remote
 
-[![smithery badge](https://smithery.ai/badge/glianalabs/gliana-ai)](https://smithery.ai/servers/glianalabs/gliana-ai)
+[![Smithery](https://img.shields.io/badge/Smithery-gliana--ai-FF5601)](https://smithery.ai/servers/glianalabs/gliana-ai)
+[![graded](https://graded.sh/badge/bz_fdf1efc51ba6.svg)](https://graded.sh/s/bz_fdf1efc51ba6)
 
 Hosted **MCP server** for [GlianaAI](https://ai.glianalabs.com) — Streamable HTTP
 on Cloudflare Workers. Exposes the free **discovery** tools, and runs the free
