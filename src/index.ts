@@ -12,6 +12,9 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { createMcpHandler } from 'agents/mcp';
 import { z } from 'zod';
 
+/** Calls to the gateway say they came from the hosted MCP, so they can be counted apart from everyone else's (2026-10-29). */
+const USER_AGENT = 'gliana-mcp-remote/0.2';
+
 interface Env {
   GLIANA_API_URL: string;
 }
@@ -71,7 +74,7 @@ class GlianaTools {
   }
 
   private async getJson<T>(path: string): Promise<T> {
-    const r = await fetch(`${this.api()}${path}`, { headers: { accept: 'application/json' } });
+    const r = await fetch(`${this.api()}${path}`, { headers: { accept: 'application/json', 'user-agent': USER_AGENT } });
     if (!r.ok) throw new Error(`GET ${path} → HTTP ${r.status}`);
     return (await r.json()) as T;
   }
@@ -266,7 +269,7 @@ class GlianaTools {
         for (const [k, v] of Object.entries(args ?? {})) {
           if (v !== undefined && v !== null) qs.set(k, String(v));
         }
-        const r = await fetch(`${this.api()}/v1/tools/${name}?${qs}`, { headers: { accept: 'application/json' } });
+        const r = await fetch(`${this.api()}/v1/tools/${name}?${qs}`, { headers: { accept: 'application/json', 'user-agent': USER_AGENT } });
         const j = (await r.json().catch(() => ({}))) as Record<string, unknown>;
         if (!r.ok) {
           return {
